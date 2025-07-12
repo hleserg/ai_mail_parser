@@ -59,22 +59,30 @@ def extract_phone_numbers(text: str) -> list[str]:
             normalized.append(digits)
     return list(set(normalized))
 
-def extract_entities(text, hf_token=None):
-    """
-    Возвращает dict с ключами: people, orgs, PHONES, EMAILS
-    """
-    MODEL_ID = "Gherman/bert-base-NER-Russian"
-    score_thr = 0.5  # дефолтный порог для уверенности
-    try:
-        tokenizer = AutoTokenizer.from_pretrained(MODEL_ID)
-        model     = AutoModelForTokenClassification.from_pretrained(MODEL_ID)
-        ner = pipeline("token-classification",
-                   model=model,
-                   tokenizer=tokenizer,
+MODEL_ID = "Gherman/bert-base-NER-Russian"
+score_thr = 0.5  # дефолтный порог для уверенности
+try:
+    _tokenizer = AutoTokenizer.from_pretrained(MODEL_ID)
+    _model = AutoModelForTokenClassification.from_pretrained(MODEL_ID)
+    _ner = pipeline("token-classification",
+                   model=_model,
+                   tokenizer=_tokenizer,
                    aggregation_strategy="none")  # нужны сырые токены BIOLU
-        tokens = ner(text)
+except Exception as e:
+    logging.error(f"Ошибка загрузки модели или токенизатора: {e}")
+    _ner = None
+
+def extract_entities(text):
+    """
+    Возвращает dict с ключами: CITY, STREET, HOUSE, LAST_NAME, FIRST_NAME, MIDDLE_NAME, PHONES, EMAILS
+    """
+    if _ner is None:
+        logging.error("NER pipeline не инициализирован.")
+        return {}
+    try:
+        tokens = _ner(text)
     except Exception as e:
-        logging.error(f"Ошибка загрузки модели или токенизации: {e}")
+        logging.error(f"Ошибка при обработке текста через NER pipeline: {e}")
         return {}
 
     entities = defaultdict(list)
