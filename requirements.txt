@@ -1,3 +1,7 @@
 pandas>=2.0.0
 requests>=2.28.0
 python-telegram-bot>=20.0
+huggingface_hub
+bs4
+transformers>=4.40.0
+transformers
